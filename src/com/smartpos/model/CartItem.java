@@ -27,4 +27,12 @@ public class CartItem {
     public int getQuantity() {
         return quantity;
     }
+    
+    // เพิ่ม Method นี้ต่อจาก incrementQuantity()
+    public void decrementQuantity() {
+        if (this.quantity > 0) {
+            this.quantity--;
+        }
+    }
+    
 }

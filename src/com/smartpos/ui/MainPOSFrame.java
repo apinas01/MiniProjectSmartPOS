@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 // Inheritance: สืบทอดความสามารถจาก JFrame
 public class MainPOSFrame extends JFrame {
@@ -23,13 +24,15 @@ public class MainPOSFrame extends JFrame {
     private JButton btnCheckout;
     private JButton btnReset; // <-- เพิ่มปุ่ม Reset
     private JButton btnUndo;  // <-- เพิ่มปุ่ม Undo
-
+    
     private ProductDatabase productDB;
     private List<CartItem> cartList;
-
+    private Stack<String> scanHistory; // <-- เพิ่ม Stack สำหรับจำประวัติบาร์โค้ดตามลำดับเวลา
+    
     public MainPOSFrame() {
         productDB = new ProductDatabase();
         cartList = new ArrayList<>();
+        scanHistory = new Stack<>(); // <-- Initialize Stack
 
         initUI();
     }
@@ -119,7 +122,6 @@ public class MainPOSFrame extends JFrame {
 
         Product product = productDB.findByBarcode(barcode);
         if (product != null) {
-            // เช็กว่ามีสินค้านี้ในตะกร้าหรือยัง
             boolean existing = false;
             for (CartItem item : cartList) {
                 if (item.getProduct().getBarcode().equals(barcode)) {
@@ -131,13 +133,17 @@ public class MainPOSFrame extends JFrame {
             if (!existing) {
                 cartList.add(new CartItem(product));
             }
+            
+            // บันทึกบาร์โค้ดล่าสุดลง Stack ประวัติ
+            scanHistory.push(barcode);
+            
             updateCartTable();
         } else {
             JOptionPane.showMessageDialog(this, "Product Not Found: " + barcode, "Warning", JOptionPane.WARNING_MESSAGE);
         }
 
         txtBarcode.setText("");
-        txtBarcode.requestFocus(); // ให้ Cursor เด้งกลับมารอรับบาร์โค้ดถัดไปเสมอ
+        txtBarcode.requestFocus();
     }
 
     private void updateCartTable() {
@@ -169,19 +175,35 @@ public class MainPOSFrame extends JFrame {
         
         // Reset รายการเพื่อรอรับลูกค้าคนถัดไป
         cartList.clear();
+        scanHistory.clear(); // <-- ล้างประวัติสแกน
         updateCartTable();
         txtBarcode.requestFocus();
     }
     
-    // ฟังก์ชัน Undo: ลบรายการสินค้าอันล่าสุดออก
+    // ฟังก์ชัน Undo แบบสมบูรณ์: ลด Qty ทีละ 1 ถ้าเหลือ 0 ค่อยลบออกจากตาราง
     private void undoLastItem() {
-        if (cartList.isEmpty()) {
+        if (scanHistory.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Cart is already empty!", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        
-        // ลบรายการตัวสุดท้ายใน List
-        cartList.remove(cartList.size() - 1);
+
+        // ดึงรหัสบาร์โค้ดล่าสุดที่สแกนเข้ามาออก
+        String lastScannedBarcode = scanHistory.pop();
+
+        // ค้นหา CartItem ที่ตรงกับรหัสบาร์โค้ดนั้น
+        for (int i = 0; i < cartList.size(); i++) {
+            CartItem item = cartList.get(i);
+            if (item.getProduct().getBarcode().equals(lastScannedBarcode)) {
+                item.decrementQuantity(); // ลดจำนวนลง 1 ชิ้น
+
+                // ถ้าชิ้นนั้นเหลือ 0 ให้เอาออกจากตาราง
+                if (item.getQuantity() <= 0) {
+                    cartList.remove(i);
+                }
+                break;
+            }
+        }
+
         updateCartTable();
         txtBarcode.requestFocus();
     }
@@ -201,6 +223,7 @@ public class MainPOSFrame extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             cartList.clear();
+            scanHistory.clear(); // <-- ล้างประวัติสแกน
             updateCartTable();
             txtBarcode.requestFocus();
         }
