@@ -21,6 +21,8 @@ public class MainPOSFrame extends JFrame {
     private DefaultTableModel tableModel;
     private JLabel lblTotalPrice;
     private JButton btnCheckout;
+    private JButton btnReset; // <-- เพิ่มปุ่ม Reset
+    private JButton btnUndo;  // <-- เพิ่มปุ่ม Undo
 
     private ProductDatabase productDB;
     private List<CartItem> cartList;
@@ -34,9 +36,9 @@ public class MainPOSFrame extends JFrame {
 
     private void initUI() {
         setTitle("Smart POS System");
-        setSize(700, 500);
+        setSize(750, 500); // ขยายความกว้างเล็กน้อยเพื่อให้ปุ่มวางพอดี
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // แสดงกลางหน้าจอ
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
         // --- ด้านบน: ช่องรับ Input บาร์โค้ด ---
@@ -53,21 +55,34 @@ public class MainPOSFrame extends JFrame {
         JScrollPane scrollPane = new JScrollPane(tblCart);
         add(scrollPane, BorderLayout.CENTER);
 
-        // --- ด้านล่าง: ยอดรวมราคา และ ปุ่ม Checkout ---
+        // --- ด้านล่าง: ยอดรวมราคา และ แผงปุ่มกด ---
         JPanel bottomPanel = new JPanel(new BorderLayout());
+        
         lblTotalPrice = new JLabel(" Total Price: 0.00 THB  ");
         lblTotalPrice.setFont(new Font("Tahoma", Font.BOLD, 22));
         lblTotalPrice.setForeground(Color.BLUE);
 
+        // แผงรวมปุ่มควบคุมฝั่งขวา (Undo, Reset, Checkout)
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        
+        btnUndo = new JButton("Undo");
+        btnUndo.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        
+        btnReset = new JButton("Reset");
+        btnReset.setFont(new Font("Tahoma", Font.PLAIN, 14));
+        
         btnCheckout = new JButton("Checkout / Save");
         btnCheckout.setFont(new Font("Tahoma", Font.BOLD, 16));
 
+        buttonPanel.add(btnUndo);
+        buttonPanel.add(btnReset);
+        buttonPanel.add(btnCheckout);
+
         bottomPanel.add(lblTotalPrice, BorderLayout.WEST);
-        bottomPanel.add(btnCheckout, BorderLayout.EAST);
+        bottomPanel.add(buttonPanel, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
 
         // --- Bind Events ---
-        // เมื่อพิมพ์/สแกนแล้วกด Enter
         txtBarcode.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -75,11 +90,26 @@ public class MainPOSFrame extends JFrame {
             }
         });
 
-        // ปุ่มชำระเงิน/บันทึกรายการ
         btnCheckout.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 checkout();
+            }
+        });
+
+        // Event สำหรับปุ่ม Undo (ลบรายการล่าสุด)
+        btnUndo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                undoLastItem();
+            }
+        });
+
+        // Event สำหรับปุ่ม Reset (ล้างตะกร้าทั้งหมด)
+        btnReset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetCart();
             }
         });
     }
@@ -142,4 +172,39 @@ public class MainPOSFrame extends JFrame {
         updateCartTable();
         txtBarcode.requestFocus();
     }
+    
+    // ฟังก์ชัน Undo: ลบรายการสินค้าอันล่าสุดออก
+    private void undoLastItem() {
+        if (cartList.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Cart is already empty!", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // ลบรายการตัวสุดท้ายใน List
+        cartList.remove(cartList.size() - 1);
+        updateCartTable();
+        txtBarcode.requestFocus();
+    }
+
+    // ฟังก์ชัน Reset: ล้างรายการทั้งหมดในตะกร้า
+    private void resetCart() {
+        if (cartList.isEmpty()) {
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+            this, 
+            "Are you sure you want to reset the cart?", 
+            "Confirm Reset", 
+            JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            cartList.clear();
+            updateCartTable();
+            txtBarcode.requestFocus();
+        }
+    }
+    
+    
 }
