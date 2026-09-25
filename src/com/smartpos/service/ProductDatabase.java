@@ -4,11 +4,11 @@ import com.smartpos.model.Product;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ProductDatabase {
-    // เก็บข้อมูลด้วย Map (Key: Barcode, Value: Product)
+public class ProductDatabase extends BaseDatabase {
     private Map<String, Product> products = new HashMap<>();
 
     public ProductDatabase() {
+        super("Smart POS Database"); // เรียก Constructor คลาสแม่
         initMockData();
     }
 
@@ -28,5 +28,10 @@ public class ProductDatabase {
     // ฟังก์ชันสำหรับเพิ่มสินค้าใหม่ในอนาคต
     public void addProduct(Product product) {
         products.put(product.getBarcode(), product);
+    }
+
+    // Polymorphism (Overloading): ค้นหาด้วย int
+    public Product findByBarcode(int barcode) {
+        return findByBarcode(String.valueOf(barcode));
     }
 }
