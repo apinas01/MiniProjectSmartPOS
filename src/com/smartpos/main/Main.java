@@ -5,12 +5,9 @@ import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                MainPOSFrame frame = new MainPOSFrame();
-                frame.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            MainPOSFrame frame = new MainPOSFrame();
+            frame.setVisible(true);
         });
     }
 }
